@@ -1,4 +1,4 @@
-# Created by Mihai Boicu 
+# Mihai Boicu 
 
 # python session_key_test.py
 
@@ -10,12 +10,12 @@ def main():
     testKeys = []
     print("Testing the session dictionary:")
     for code in testCodes:
-        key = sessionKey.dictionarySession[code]
+        key = sessionKey.getSessionKey(code)
         print('Code '+str(code)+' has key '+str(key))
         testKeys.append(key)
     # print(testKeys)
     for key in testKeys:
-        key = sessionKey.dictionarySession[code]
+        code = sessionKey.getSessionCode(key)
         print('Key '+str(key)+' has code '+str(code))
 
 if __name__ == '__main__':

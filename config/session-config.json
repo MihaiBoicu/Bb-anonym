@@ -1,10 +1,11 @@
 {
-    "format": "CSV",
-    "start_year": 2004, 
-    "end_year": 2030,
+    "format": "TXT",
+    "start_year": 2020, 
+    "end_year": 2022,
     "semesters_list": [10, 40, 70],
     "start_key": 100,
     "min_step": 10,
-    "max_step": 100
+    "max_step": 100,
+    "regenerate": true
 }
 

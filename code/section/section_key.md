@@ -1,5 +1,7 @@
 # Anonymizing the Course Sections
 
+## Authors and Contributors
+
 Contributers:
 - Mouhamed Sylla (Documentation) Spring 2022
 

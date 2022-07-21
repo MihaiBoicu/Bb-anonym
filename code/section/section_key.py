@@ -5,6 +5,8 @@
 # 2022 March-April
 # - Mouhamed Syllas (extract code and comment)
 # - Mihai Boicu (update code/comments for clarity)
+# 2022 July
+# - Update for CSV
 
 import os
 import random
@@ -24,7 +26,8 @@ class SectionKey:
 
     # a map between a section code in a given semester and its anonymized code
     # example "11233.202110" is associated with 12345 where 123 is the code for session 202110 and 45 is the code for section 11233
-    dictionary = {}
+    dictionaryCourseIdSession = {}
+    dictionaryKey = {}
 
     # load the current anonymization file and initialize the dictionary
     def load(self):
