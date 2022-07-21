@@ -1,4 +1,5 @@
 {
+    "format": "CSV",
     "start_year": 2004, 
     "end_year": 2030,
     "semesters_list": [10, 40, 70],

@@ -1,29 +1,32 @@
 # Anonymizing the Sessions
 
-Contributers:
+Documentation Contributers:
 - Anushree Manoharrao (documentation) Spring 2022
 
-Editor and reviewer:
+Documentation Editor and Reviewer:
 - Mihai Boicu
 
 ## Understanding how to configure the class Session Key
 
-The class SessionKey is managing a dictionary to anonymize a session in GMU format to a number that will hide when a course took place, but keeping the chronological order not changed. For instance, 202140 is the GMU format for a sesssion, which correspond to Summer 2021 and a possible generated anonymized code may be 237. For Fall 2021, 202170 a  generated anonymized code may be 314, but cannot be 129 (because will not maintain the chronological order).
+The class SessionKey (stored in session_key.py) is managing a dictionary to anonymize a session in GMU format to a number that will hide when a course took place, but keeping the chronological order not changed. For instance, 202140 is the GMU format for a sesssion, which correspond to Summer 2021 and a possible generated anonymized code may be 237. For Fall 2021, 202170 a  generated anonymized code may be 314, but cannot be 129 (because will not maintain the chronological order).
 
-There are two files asssociated with sessions:
+There are several files asssociated with sessions:
 - config/session-config.json: keeps the configuration data on how to generate the anonymized values for the sessions
-- key/sessionKeys.txt: keeps the current generated anonymized values for the sessions (if any)
+- key/sessionKeys.txt: keeps the current generated anonymized values for the sessions (if the dictionary was generated in text format)
+- key/sessionKeys.csv: keeps the current generated anonymized values for the sessions (if the dictionary was generated in CSV format)
 
 Before you use session keys, you must define the configuration file. However, you must not define the key file, because this will be generated automatically by the code.
 
 ### Sample session-config.json
 This file must contain values for all the following, as in the example below:
-- Start year and end year are inclusive and specify the range for which the anonymized session values are defined.
+- The format is either TXT or CSV and indicates how the output is stored. 
+- The start year and end year are inclusive and specify the range for which the anonymized session values are defined.
 - List of semesters, contains the current GMU semesters, where 10,40,70 are Spring, Summer and Fall respectively.
 - To randomize the session values, a start value along with a range for min and max step is used. The first key will start after the start key and for each next session (chronologically) a random value between min and max (inclusive) will be added. 
 
 ```
 { 
+ "format": "TXT:,
  "start_year": 2004, 
  "end_year": 2030,
  "semesters_list": [10, 40, 70],
@@ -41,8 +44,10 @@ This file must contain values for all the following, as in the example below:
 These numbers were generated as follows:
  - 200040 198   - Summer of 2000 is mapped to a number greater than 100 by adding a random value between 10 and 100 (e.g. 98), obtaining 198
  - 200070 250   - Fall of 2000 will be mapped to a number greater than 198 to which we added a random value between 10 and 100
->
+
 The new anonymized values are added in the same chronological pattern as seen above.
+
+### File location
 
 - session-config.json has to be created under a new folder <strong>config</strong> under the root path of the project with a path like  "../config/session-config.json"
 - sessionKeys.txt will be generated under the same root path with a new folder <strong>key</strong> with a path like  "../key/sessionKeys.txt"
@@ -132,20 +137,3 @@ The load function is performing the following operations:
  <li>  It then appends the session as key and the corresponding anonymized value as value to a single line, using space as delimiter.</li>
  <li>  This is exactly reverse of what happened in the load function. Load function first reads the line and splits it to key-value pair, and here it reads the key-value pair to make it a single value. </li>
 </ul>
-
-
-
-
-
-
-
-
-=======
-
- For the session key there needs to be
-#a configurated file to generate keys if there is no file that the file is randomly generated with keys. def load(Self)
-#used to open the file and read the data only after this is done the user needs to save the file and then input data
-#Once the file is input the data gets allocated and generated for startyear, endyear, lastkey, minstep, maxstep and semster
-#following the generate code there is then added randomization code to keep privacy of students lastKey += random.randint(minStep, maxStep)
-finally - Initialize and checks if file exist if does not generates a new data it saves it.s
-
