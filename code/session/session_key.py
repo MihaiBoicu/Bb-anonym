@@ -9,6 +9,7 @@
 # - Mihai Boicu (update code/comments for clarity)
 # 2022 July 
 # - Mihai Boicu (add CSV output format for keys)
+# - Mihai Boicu (add regenerate option and cleanup files)
 
 import csv
 import json
