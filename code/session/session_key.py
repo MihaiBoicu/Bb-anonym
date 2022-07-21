@@ -25,44 +25,45 @@ class SessionKey:
     # configuration file to be used to generate the keys
     _CONFIG_FILE_NAME = "../../config/session-config.json"
 
+    # configuration constants
+    _START_YEAR = 0
+    _END_YEAR = 0
+    _START_KEY = 0
+    _MIN_STEP = 0
+    _MAX_STEP = 0
+    _SEMESTERS = []
+    _DICTIONARY_TYPE = None
+    _REGENERATE = None
+
     # key file with randomly generated keys for sessions
-    # 
     _KEY_FILE_NAME_TXT = "../../key/sessionKeys.txt"
     _KEY_FILE_NAME_CSV = "../../key/sessionKeys.csv"
+    
 
     # a map between a session (i.e. semester) and its anonymized code
     # example (200040, 198) will link Summer semester in 2000 with the code 198
     _dictionarySession = {}
     _dictionaryKey = {}
-    _dictionaryType = None
-
-    _startYear = 0
-    _endYear = 0
-    _startKey = 0
-    _minStep = 0
-    _maxStep = 0
-    _semesters = []
-    _regenerate = None
 
     # load the configuration file for the session key
     def __loadConfig(self):
         configFile = open(self._CONFIG_FILE_NAME, )
         configData = json.load(configFile)
 
-        self._dictionaryType = configData['format']
-        self._startYear = configData['start_year']
-        self._endYear = configData['end_year']
-        self._startKey = configData['start_key']
-        self._minStep = configData['min_step']
-        self._maxStep = configData['max_step']
-        self._semesters = configData['semesters_list']
-        self._regenerate = configData['regenerate']
+        self._DICTIONARY_TYPE = configData['format']
+        self._START_YEAR = configData['start_year']
+        self._END_YEAR = configData['end_year']
+        self._START_KEY = configData['start_key']
+        self._MIN_STEP = configData['min_step']
+        self._MAX_STEP = configData['max_step']
+        self._SEMESTERS = configData['semesters_list']
+        self._REGENERATE = configData['regenerate']
 
     # load the generated key file and initialize the dictionary
     # return true if succeeds, false otherwise
     def __load(self):
         file = None
-        if self._dictionaryType == "TXT" and exists(self._KEY_FILE_NAME_TXT):
+        if self._DICTIONARY_TYPE == "TXT" and exists(self._KEY_FILE_NAME_TXT):
             file = open(self._KEY_FILE_NAME_TXT)
             lines = file.readlines()
             for line in lines:
@@ -73,7 +74,7 @@ class SessionKey:
             if self._DEBUG:
                 print("  - text file loaded: "+self._KEY_FILE_NAME_TXT)
             return True
-        if self._dictionaryType == "CSV" and exists(self._KEY_FILE_NAME_CSV):
+        if self._DICTIONARY_TYPE == "CSV" and exists(self._KEY_FILE_NAME_CSV):
             file = open(self._KEY_FILE_NAME_CSV, mode='r')
             csvFile = csv.reader(file)
             lineIndex = 0
@@ -111,7 +112,7 @@ class SessionKey:
             os.remove(self._KEY_FILE_NAME_TXT)
         if os.path.exists(self._KEY_FILE_NAME_CSV):
             os.remove(self._KEY_FILE_NAME_CSV)        
-        if self._dictionaryType=="TXT":
+        if self._DICTIONARY_TYPE=="TXT":
             file = open(self._KEY_FILE_NAME_TXT, "w")
             for keyName in sorted(self._dictionarySession.keys()):
                 file.write(str(keyName) + " " + str(self._dictionarySession[keyName]) + "\n")
@@ -119,7 +120,7 @@ class SessionKey:
             if self._DEBUG:
                 print("  - text file saved: "+self._KEY_FILE_NAME_TXT)
             return True
-        if self._dictionaryType=="CSV":
+        if self._DICTIONARY_TYPE=="CSV":
             # writing to the csv file 
             csvfile = open(self._KEY_FILE_NAME_CSV, "w") 
             # creating a csv writer object 
@@ -139,14 +140,14 @@ class SessionKey:
 
     # generate a new dictionary (assumed empty)
     def __generate(self):
-        lastKey =  self._startKey
+        lastKey =  self._START_KEY
         # for all years in the configuration range
-        for i in range(self._startYear, self._endYear + 1):
+        for i in range(self._START_YEAR, self._END_YEAR + 1):
             # for all the semesters
-            for sem in self._semesters:
+            for sem in self._SEMESTERS:
                 # update the last key to a new valid key
                 sessionCode = i * 100 + sem
-                lastKey += random.randint(self._minStep, self._maxStep)
+                lastKey += random.randint(self._MIN_STEP, self._MAX_STEP)
                 # save the semester and key in dictionary
                 self._dictionarySession[sessionCode] = lastKey
                 self._dictionaryKey[lastKey] = sessionCode
@@ -163,13 +164,13 @@ class SessionKey:
         if self._DEBUG:
             print("Session dictionary initialization: ")
         self.__loadConfig()
-        if self._regenerate or not self.__load():
+        if self._REGENERATE or not self.__load():
             self.__generate()
             self.__save()
 
 
     def getSessionKey(self,sessionCode):
-        return self._dictionarySession[sessionCode]
+        return self._dictionarySession.get(sessionCode)
 
     def getSessionCode(self,sessionKey):
-        return self._dictionaryKey[sessionKey]
+        return self._dictionaryKey.get(sessionKey)

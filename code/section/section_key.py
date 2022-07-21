@@ -8,6 +8,7 @@
 # 2022 July
 # - Update for CSV
 
+import json
 import os
 import random
 import session_key
@@ -15,19 +16,34 @@ import session_key
 # Anonymization of the Section Key
 class SectionKey:
 
+    _DEBUG = False
+
+    # configuration file to be used to generate the keys
+    _CONFIG_FILE_NAME = "../../config/section-config.json"
+
     # key file with randomly generated keys for sections
-    KEY_FILE_NAME = "../key/sectionKeys.txt"
+    _KEY_FILE_NAME_TXT = "../../key/sectionKeys.txt"
+    _KEY_FILE_NAME_CSV = "../../key/sectionKeys.csv"
 
     # maximum number of sections allowed in a session
-    MAX_SECTIONS_PER_SESSION = 100
+    _MAX_SECTIONS_PER_SESSION = None
 
     # the session anonymization key
-    sessionKey: session_key.SessionKey
+    _sessionKey: session_key.SessionKey
 
     # a map between a section code in a given semester and its anonymized code
     # example "11233.202110" is associated with 12345 where 123 is the code for session 202110 and 45 is the code for section 11233
-    dictionaryCourseIdSession = {}
-    dictionaryKey = {}
+    _dictionaryCourseIdSession = {}
+    _dictionaryKey = {}
+
+    # load the configuration file for the section key
+    def __loadConfig(self):
+        configFile = open(self._CONFIG_FILE_NAME, )
+        configData = json.load(configFile)
+
+        self._dictionaryType = configData['format']
+        self._regenerate = configData['regenerate']
+
 
     # load the current anonymization file and initialize the dictionary
     def load(self):
