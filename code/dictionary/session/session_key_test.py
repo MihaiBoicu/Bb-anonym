@@ -1,8 +1,6 @@
 # Mihai Boicu 
 
-# python session_key_test.py
-
-import session_key;
+from dictionary.session import session_key;
 
 def main():
     sessionKey = session_key.SessionKey()
@@ -29,6 +27,4 @@ def main():
         code = sessionKey.getSessionCode(key)
         print('Key '+str(key)+' has code '+str(code))
 
-if __name__ == '__main__':
-    main()
 

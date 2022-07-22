@@ -22,7 +22,7 @@ class SessionKey:
     _DEBUG = False
 
     # configuration file to be used to generate the keys
-    _CONFIG_FILE_NAME = "../../config/session-config.json"
+    _CONFIG_FILE_NAME = "../config/session-config.json"
 
     # configuration constants
     _START_YEAR = 0
@@ -35,8 +35,8 @@ class SessionKey:
     _REGENERATE = None
 
     # key file with randomly generated keys for sessions
-    _KEY_FILE_NAME_TXT = "../../key/sessionKeys.txt"
-    _KEY_FILE_NAME_CSV = "../../key/sessionKeys.csv"
+    _KEY_FILE_NAME_TXT = "../key/sessionKeys.txt"
+    _KEY_FILE_NAME_CSV = "../key/sessionKeys.csv"
     
 
     # a map between a session (i.e. semester) and its anonymized code

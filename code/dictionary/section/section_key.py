@@ -13,16 +13,16 @@ import csv
 import json
 import os
 import random
-import session_key
+from dictionary.session import session_key
 import sys
 
-# Anonymization of the Section Key
+# Anonymization of the Section Codes
 class SectionKey:
 
     _DEBUG = False
 
     # configuration file to be used to generate the keys
-    _CONFIG_FILE_NAME = "../../config/section-config.json"
+    _CONFIG_FILE_NAME = "../config/section_config.json"
 
     # configuration constants
     _DICTIONARY_TYPE = None
@@ -30,8 +30,8 @@ class SectionKey:
     _MAX_SECTIONS_PER_SESSION = None
 
     # key file with randomly generated keys for sections
-    _KEY_FILE_NAME_TXT = "../../key/sectionKeys.txt"
-    _KEY_FILE_NAME_CSV = "../../key/sectionKeys.csv"
+    _KEY_FILE_NAME_TXT = "../key/sectionKeys.txt"
+    _KEY_FILE_NAME_CSV = "../key/sectionKeys.csv"
 
     # the session anonymization key
     _sessionKey: session_key.SessionKey
@@ -120,7 +120,7 @@ class SectionKey:
             header = [ "session", "key"]
             csvwriter.writerow(header)  
             # writing the fields 
-            for sesionCode in sorted(self._dictionarySection.keys()):
+            for sectionCode in sorted(self._dictionarySection.keys()):
                 entry = [ sectionCode, self._dictionarySection[sectionCode] ]
                 csvwriter.writerow(entry) 
             csvfile.close()
@@ -132,9 +132,12 @@ class SectionKey:
 
     # Initialize the section key based on the saved key file, if any
     def __init__(self, sessionKey):
-        self.sessionKey=sessionKey
-        if os.path.isfile(self.KEY_FILE_NAME):
-            self.load()
+        if self._DEBUG:
+            print("Section dictionary initialization: ")
+        self._sessionKey = sessionKey
+        self.__loadConfig()
+        self.__cleanFiles()
+        self.__load()
 
     # return the existing key for the given section, if any 
     # or create and return a new key
@@ -157,7 +160,7 @@ class SectionKey:
         sectionKey = -1
         trial = 0
         while True:
-            sectionKey = int(sessionCode * self._MAX_SECTIONS_PER_SESSION + (int)(random.random() * self._MAX_SECTIONS_PER_SESSION))
+            sectionKey = int(sessionKey * self._MAX_SECTIONS_PER_SESSION + (int)(random.random() * self._MAX_SECTIONS_PER_SESSION))
             if self._dictionaryKey.get(sectionKey) == None:
                 break
             trial += 1
