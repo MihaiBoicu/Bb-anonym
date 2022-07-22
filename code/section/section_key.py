@@ -6,12 +6,15 @@
 # - Mouhamed Syllas (extract code and comment)
 # - Mihai Boicu (update code/comments for clarity)
 # 2022 July
-# - Update for CSV
+# - Mihai Boicu (add CSV output format for keys)
+# - Mihai Boicu (add regenerate option, invalid values and cleanup files)
 
+import csv
 import json
 import os
 import random
 import session_key
+import sys
 
 # Anonymization of the Section Key
 class SectionKey:
@@ -21,71 +24,111 @@ class SectionKey:
     # configuration file to be used to generate the keys
     _CONFIG_FILE_NAME = "../../config/section-config.json"
 
+    # configuration constants
+    _DICTIONARY_TYPE = None
+    _REGENERATE = None
+    _MAX_SECTIONS_PER_SESSION = None
+
     # key file with randomly generated keys for sections
     _KEY_FILE_NAME_TXT = "../../key/sectionKeys.txt"
     _KEY_FILE_NAME_CSV = "../../key/sectionKeys.csv"
-
-    # maximum number of sections allowed in a session
-    _MAX_SECTIONS_PER_SESSION = None
 
     # the session anonymization key
     _sessionKey: session_key.SessionKey
 
     # a map between a section code in a given semester and its anonymized code
     # example "11233.202110" is associated with 12345 where 123 is the code for session 202110 and 45 is the code for section 11233
-    _dictionaryCourseIdSession = {}
+    _dictionarySection = {}
     _dictionaryKey = {}
+
+    _isModified = False
 
     # load the configuration file for the section key
     def __loadConfig(self):
         configFile = open(self._CONFIG_FILE_NAME, )
         configData = json.load(configFile)
+        self._DICTIONARY_TYPE = configData['format']
+        self._REGENERATE = configData['regenerate']
+        self._MAX_SECTIONS_PER_SESSION = configData['max_sections_per_session']
 
-        self._dictionaryType = configData['format']
-        self._regenerate = configData['regenerate']
-
+    def __cleanFiles(self):
+        if self._REGENERATE or self._DICTIONARY_TYPE == "CSV":
+            if os.path.exists(self._KEY_FILE_NAME_TXT):
+                os.remove(self._KEY_FILE_NAME_TXT)
+        if self._REGENERATE or self._DICTIONARY_TYPE == "TXT":
+            if os.path.exists(self._KEY_FILE_NAME_CSV):
+                os.remove(self._KEY_FILE_NAME_CSV) 
 
     # load the current anonymization file and initialize the dictionary
-    def load(self):
-        file = open(self.KEY_FILE_NAME, "r")
-        lines = file.readlines()
-        for line in lines:
-            parts = line.split(" ")
-            self.dictionary[str(parts[0])] = parts[1]
-        file.close()
+    def __load(self):
+        if self._REGENERATE:
+            return False    
+        if os.path.exists(self._KEY_FILE_NAME_TXT):
+            file = open(self._KEY_FILE_NAME_TXT, mode='r')
+            lines = file.readlines()
+            for line in lines:
+                parts = line.split(" ")
+                self._dictionarySection[str(parts[0])] = int(parts[1])
+                self._dictionaryKey[int(parts[1])] = str(parts[0])
+            file.close()
+            if self._DEBUG:
+                print("  - text file loaded: "+self._KEY_FILE_NAME_TXT)
+            return True
+        if os.path.exists(self._KEY_FILE_NAME_CSV):
+            file = open(self._KEY_FILE_NAME_CSV, mode='r')
+            csvFile = csv.reader(file)
+            lineIndex = 0
+            sessionCode = None
+            sessionKey = None
+            for lines in csvFile:
+                for line in lines:
+                    lineIndex += 1
+                    if lineIndex>2:
+                        if lineIndex % 2 == 1:
+                            sessionCode = int(line)
+                        else:
+                            sessionKey = int (line)
+                            self._dictionarySection[sessionCode] = sessionKey
+                            self._dictionaryKey[sessionKey] = sessionCode
+            file.close()
+            if self._DEBUG:
+                print("  - csv file loaded: "+self._KEY_FILE_NAME_CSV)
+                print(self._dictionarySection)
+                print(self._dictionaryKey)
+            return True
+        # otherwise no file
+        print("  - dictionary file not found")
+        return False
 
     # save the current dictionary in the key file 
     def save(self):
-        file = open(self.KEY_FILE_NAME, "w")
-        for keyName in sorted(self.dictionary.keys()):
-            file.write(str(keyName) + " " + str(self.dictionary[keyName]) + "\n")
-        file.close()
-
-    # return the existing key for the given section, if any 
-    # or create and return a new key
-    def get(self, section):
-
-        # return current key if section already defined in dictionary
-        if section in self.dictionary.keys():
-            return self.dictionary[section]
-
-        # define new code
-        # identify the session in section name
-        # i.e.  202110 in "11233.202110"
-        parts = section.split(".")
-        sessionPart = int(parts[1])
-        sessionCode = self.sessionKey.dictionary[sessionPart]
-        sectionCode = -1
-
-        # randomly generate a new (not used) anonymized value for the section grouping the sections in the same session together
-        while True:
-            sectionCode = int(sessionCode * self.MAX_SECTIONS_PER_SESSION + random.random() * self.MAX_SECTIONS_PER_SESSION)
-            if not sectionCode in self.dictionary.values():
-                break
-        # save the value in the dictionary
-        self.dictionary[section] = sectionCode
-        # return the generated code
-        return self.dictionary[section]
+        if not self._isModified:
+            return
+        if self._DICTIONARY_TYPE=="TXT":
+            file = open(self._KEY_FILE_NAME_TXT, "w")
+            for sectionCode in sorted(self._dictionarySection.keys()):
+                file.write(str(sectionCode) + " " + str(self._dictionarySection[sectionCode]) + "\n")
+            file.close()
+            if self._DEBUG:
+                print("  - text file saved: "+self._KEY_FILE_NAME_TXT)
+            return True
+        if self._DICTIONARY_TYPE=="CSV":
+            # writing to the csv file 
+            csvfile = open(self._KEY_FILE_NAME_CSV, "w") 
+            # creating a csv writer object 
+            csvwriter = csv.writer(csvfile) 
+            header = [ "session", "key"]
+            csvwriter.writerow(header)  
+            # writing the fields 
+            for sesionCode in sorted(self._dictionarySection.keys()):
+                entry = [ sectionCode, self._dictionarySection[sectionCode] ]
+                csvwriter.writerow(entry) 
+            csvfile.close()
+            if self._DEBUG:
+                print("  - csv file saved: "+self._KEY_FILE_NAME_CSV)
+            return True
+        print("  - error saving dictionary")
+        return False
 
     # Initialize the section key based on the saved key file, if any
     def __init__(self, sessionKey):
@@ -93,12 +136,41 @@ class SectionKey:
         if os.path.isfile(self.KEY_FILE_NAME):
             self.load()
 
+    # return the existing key for the given section, if any 
+    # or create and return a new key
+    def getSectionKey(self, sectionCode):
+        # return current key if section already defined in dictionary
+        sectionKey = self._dictionarySection.get(sectionCode)
+        if sectionKey != None:
+            return sectionKey
+        # define new code
+        # identify the session in section name
+        # i.e.  202110 in "11233.202110"
+        parts = sectionCode.split(".")
+        sectionNumber = int(parts[0])
+        sessionCode = int(parts[1])
+        sessionKey = self._sessionKey.getSessionKey(sessionCode)
+        if sessionKey==None:
+            print("Invalid session code for this section: "+str(sectionCode))
+            sys.exit(1)
+        # randomly generate a new (not used) anonymized value for the section key grouping the sections in the same session together 
+        sectionKey = -1
+        trial = 0
+        while True:
+            sectionKey = int(sessionCode * self._MAX_SECTIONS_PER_SESSION + (int)(random.random() * self._MAX_SECTIONS_PER_SESSION))
+            if self._dictionaryKey.get(sectionKey) == None:
+                break
+            trial += 1
+            if trial > 100:
+                print("Too high density of section keys per session.")
+                sys.exit(1)                
+        # save the value in the dictionary
+        self._dictionarySection[sectionCode] = sectionKey
+        self._dictionaryKey[sectionKey] = sectionCode
+        self._isModified=True
+        # return the generated code
+        return self._dictionarySection.get(sectionCode)
 
-# REVISE
-#This section of the code is nessecary for this research because the section of the class in question has to be randomized
-#If the section is not randomized it is easy to tell which student is from which because the section divides students up by classes.
-#Firstly needs to access the data and seperate the different sections by making them strings and giving value numbers to hold them such as
-#sections[1] and close. Next save the file and loads seesion key file and uses isfile to make sure the keyfile exist
-#After making sure the file exist the code moves onto loading and once loaded randomizing the section uses while loop
-#to keep randomizing sections untill there is a section number that does not exist in the dictionary. The equation is
-#(sessionCode * 100 + random.random() * 100)
+    def getSectionCode(self,sectionKey):
+        return self._dictionaryKey.get(sectionKey)
+

@@ -9,12 +9,11 @@
 # - Mihai Boicu (update code/comments for clarity)
 # 2022 July 
 # - Mihai Boicu (add CSV output format for keys)
-# - Mihai Boicu (add regenerate option and cleanup files)
+# - Mihai Boicu (add regenerate option, invalid values and cleanup files)
 
 import csv
 import json
 import os
-from os.path import exists
 import random
 
 # Session Anonymization Key
@@ -59,12 +58,21 @@ class SessionKey:
         self._SEMESTERS = configData['semesters_list']
         self._REGENERATE = configData['regenerate']
 
+    def __cleanFiles(self):
+        if self._REGENERATE or self._DICTIONARY_TYPE == "CSV":
+            if os.path.exists(self._KEY_FILE_NAME_TXT):
+                os.remove(self._KEY_FILE_NAME_TXT)
+        if self._REGENERATE or self._DICTIONARY_TYPE == "TXT":
+            if os.path.exists(self._KEY_FILE_NAME_CSV):
+                os.remove(self._KEY_FILE_NAME_CSV) 
+
     # load the generated key file and initialize the dictionary
     # return true if succeeds, false otherwise
     def __load(self):
-        file = None
-        if self._DICTIONARY_TYPE == "TXT" and exists(self._KEY_FILE_NAME_TXT):
-            file = open(self._KEY_FILE_NAME_TXT)
+        if self._REGENERATE:
+            return False
+        if os.path.exists(self._KEY_FILE_NAME_TXT):
+            file = open(self._KEY_FILE_NAME_TXT, mode="r")
             lines = file.readlines()
             for line in lines:
                 parts = line.split(" ")
@@ -74,7 +82,7 @@ class SessionKey:
             if self._DEBUG:
                 print("  - text file loaded: "+self._KEY_FILE_NAME_TXT)
             return True
-        if self._DICTIONARY_TYPE == "CSV" and exists(self._KEY_FILE_NAME_CSV):
+        if os.path.exists(self._KEY_FILE_NAME_CSV):
             file = open(self._KEY_FILE_NAME_CSV, mode='r')
             csvFile = csv.reader(file)
             lineIndex = 0
@@ -82,17 +90,12 @@ class SessionKey:
             sessionKey = None
             for lines in csvFile:
                 for line in lines:
-                    # if self._DEBUG:
-                        # print("  --- "+line)
                     lineIndex += 1
                     if lineIndex>2:
                         if lineIndex % 2 == 1:
                             sessionCode = int(line)
-                            # print("sessionCode="+str(sessionCode))
                         else:
-                            # print("sessionCode="+str(sessionCode))
                             sessionKey = int (line)
-                            # print("sessionKey="+str(sessionKey))
                             self._dictionarySession[sessionCode] = sessionKey
                             self._dictionaryKey[sessionKey] = sessionCode
             file.close()
@@ -107,15 +110,11 @@ class SessionKey:
         
     # save the key file based on the current dictionary
     # return true if succeeds, false otherwise
-    def __save(self):
-        if os.path.exists(self._KEY_FILE_NAME_TXT):
-            os.remove(self._KEY_FILE_NAME_TXT)
-        if os.path.exists(self._KEY_FILE_NAME_CSV):
-            os.remove(self._KEY_FILE_NAME_CSV)        
+    def __save(self):      
         if self._DICTIONARY_TYPE=="TXT":
             file = open(self._KEY_FILE_NAME_TXT, "w")
-            for keyName in sorted(self._dictionarySession.keys()):
-                file.write(str(keyName) + " " + str(self._dictionarySession[keyName]) + "\n")
+            for sessionCode in sorted(self._dictionarySession.keys()):
+                file.write(str(sessionCode) + " " + str(self._dictionarySession[sessionCode]) + "\n")
             file.close()
             if self._DEBUG:
                 print("  - text file saved: "+self._KEY_FILE_NAME_TXT)
@@ -128,8 +127,8 @@ class SessionKey:
             header = [ "session", "key"]
             csvwriter.writerow(header)  
             # writing the fields 
-            for keyName in sorted(self._dictionarySession.keys()):
-                entry = [ keyName, self._dictionarySession[keyName] ]
+            for sessionCode in sorted(self._dictionarySession.keys()):
+                entry = [ sessionCode, self._dictionarySession[sessionCode] ]
                 csvwriter.writerow(entry) 
             csvfile.close()
             if self._DEBUG:
@@ -164,7 +163,8 @@ class SessionKey:
         if self._DEBUG:
             print("Session dictionary initialization: ")
         self.__loadConfig()
-        if self._REGENERATE or not self.__load():
+        self.__cleanFiles()
+        if not self.__load():
             self.__generate()
             self.__save()
 
