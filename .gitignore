@@ -6,6 +6,8 @@ inbox/*.*
 key/*.*
 outbox/*.*
 predefined-key/*.*
+project/*.*
+
 
 
 # Byte-compiled / optimized / DLL files
