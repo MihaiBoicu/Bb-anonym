@@ -20,8 +20,7 @@ import random
 class SessionKey:
 
     _DEBUG = False
-
-    # configuration file to be used to generate the keys
+    
     _projectPath = None
 
     # configuration constants

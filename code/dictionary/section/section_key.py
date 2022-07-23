@@ -21,17 +21,17 @@ class SectionKey:
 
     _DEBUG = False
 
-    # configuration file to be used to generate the keys
-    _CONFIG_FILE_NAME = "../config/section_config.json"
+    _projectPath = None
 
     # configuration constants
-    _DICTIONARY_TYPE = None
-    _REGENERATE = None
-    _MAX_SECTIONS_PER_SESSION = None
+    _dictionaryType = None
+    _regenerate = None
+    _maxSectionsPerSession = None
 
     # key file with randomly generated keys for sections
-    _KEY_FILE_NAME_TXT = "../key/sectionKeys.txt"
-    _KEY_FILE_NAME_CSV = "../key/sectionKeys.csv"
+    _txtKeyFilename: None
+    _csvKeyFilename: None  
+
 
     # the session anonymization key
     _sessionKey: session_key.SessionKey
@@ -45,26 +45,27 @@ class SectionKey:
 
     # load the configuration file for the section key
     def __loadConfig(self):
-        configFile = open(self._CONFIG_FILE_NAME, )
+        configFile = open(self._projectPath+"/config/section.json", mode='r')
         configData = json.load(configFile)
-        self._DICTIONARY_TYPE = configData['format']
-        self._REGENERATE = configData['regenerate']
-        self._MAX_SECTIONS_PER_SESSION = configData['max_sections_per_session']
+        configFile.close()
+        self._dictionaryType = configData['format']
+        self._regenerate = configData['regenerate']
+        self._maxSectionsPerSession = configData['max_sections_per_session']
 
     def __cleanFiles(self):
-        if self._REGENERATE or self._DICTIONARY_TYPE == "CSV":
-            if os.path.exists(self._KEY_FILE_NAME_TXT):
-                os.remove(self._KEY_FILE_NAME_TXT)
-        if self._REGENERATE or self._DICTIONARY_TYPE == "TXT":
-            if os.path.exists(self._KEY_FILE_NAME_CSV):
-                os.remove(self._KEY_FILE_NAME_CSV) 
+        if self._regenerate or self._dictionaryType == "CSV":
+            if os.path.exists(self._txtKeyFilename):
+                os.remove(self._txtKeyFilename)
+        if self._regenerate or self._dictionaryType == "TXT":
+            if os.path.exists(self._csvKeyFilename):
+                os.remove(self._csvKeyFilename) 
 
     # load the current anonymization file and initialize the dictionary
     def __load(self):
-        if self._REGENERATE:
+        if self._regenerate:
             return False    
-        if os.path.exists(self._KEY_FILE_NAME_TXT):
-            file = open(self._KEY_FILE_NAME_TXT, mode='r')
+        if os.path.exists(self._txtKeyFilename):
+            file = open(self._txtKeyFilename, mode='r')
             lines = file.readlines()
             for line in lines:
                 parts = line.split(" ")
@@ -72,10 +73,10 @@ class SectionKey:
                 self._dictionaryKey[int(parts[1])] = str(parts[0])
             file.close()
             if self._DEBUG:
-                print("  - text file loaded: "+self._KEY_FILE_NAME_TXT)
+                print("  - text file loaded: "+self._txtKeyFilename)
             return True
-        if os.path.exists(self._KEY_FILE_NAME_CSV):
-            file = open(self._KEY_FILE_NAME_CSV, mode='r')
+        if os.path.exists(self._csvKeyFilename):
+            file = open(self._csvKeyFilename, mode='r')
             csvFile = csv.reader(file)
             lineIndex = 0
             sessionCode = None
@@ -92,7 +93,7 @@ class SectionKey:
                             self._dictionaryKey[sessionKey] = sessionCode
             file.close()
             if self._DEBUG:
-                print("  - csv file loaded: "+self._KEY_FILE_NAME_CSV)
+                print("  - csv file loaded: "+self._csvKeyFilename)
                 print(self._dictionarySection)
                 print(self._dictionaryKey)
             return True
@@ -104,17 +105,17 @@ class SectionKey:
     def save(self):
         if not self._isModified:
             return
-        if self._DICTIONARY_TYPE=="TXT":
-            file = open(self._KEY_FILE_NAME_TXT, "w")
+        if self._dictionaryType=="TXT":
+            file = open(self._txtKeyFilename, "w")
             for sectionCode in sorted(self._dictionarySection.keys()):
                 file.write(str(sectionCode) + " " + str(self._dictionarySection[sectionCode]) + "\n")
             file.close()
             if self._DEBUG:
-                print("  - text file saved: "+self._KEY_FILE_NAME_TXT)
+                print("  - text file saved: "+self._txtKeyFilename)
             return True
-        if self._DICTIONARY_TYPE=="CSV":
+        if self._dictionaryType=="CSV":
             # writing to the csv file 
-            csvfile = open(self._KEY_FILE_NAME_CSV, "w") 
+            csvfile = open(self._csvKeyFilename, "w") 
             # creating a csv writer object 
             csvwriter = csv.writer(csvfile) 
             header = [ "session", "key"]
@@ -125,19 +126,10 @@ class SectionKey:
                 csvwriter.writerow(entry) 
             csvfile.close()
             if self._DEBUG:
-                print("  - csv file saved: "+self._KEY_FILE_NAME_CSV)
+                print("  - csv file saved: "+self._csvKeyFilename)
             return True
         print("  - error saving dictionary")
         return False
-
-    # Initialize the section key based on the saved key file, if any
-    def __init__(self, sessionKey):
-        if self._DEBUG:
-            print("Section dictionary initialization: ")
-        self._sessionKey = sessionKey
-        self.__loadConfig()
-        self.__cleanFiles()
-        self.__load()
 
     # return the existing key for the given section, if any 
     # or create and return a new key
@@ -160,7 +152,7 @@ class SectionKey:
         sectionKey = -1
         trial = 0
         while True:
-            sectionKey = int(sessionKey * self._MAX_SECTIONS_PER_SESSION + (int)(random.random() * self._MAX_SECTIONS_PER_SESSION))
+            sectionKey = int(sessionKey * self._maxSectionsPerSession + (int)(random.random() * self._maxSectionsPerSession))
             if self._dictionaryKey.get(sectionKey) == None:
                 break
             trial += 1
@@ -177,3 +169,13 @@ class SectionKey:
     def getSectionCode(self,sectionKey):
         return self._dictionaryKey.get(sectionKey)
 
+    def __init__(self, projectPath, sessionKey):
+        if self._DEBUG:
+            print("Section dictionary initialization: ")
+        self._sessionKey = sessionKey            
+        self._projectPath = projectPath
+        self._txtKeyFilename = projectPath + "/key/sectionKeys.txt"
+        self._csvKeyFilename = projectPath +"/key/sectionKeys.csv"
+        self.__loadConfig()
+        self.__cleanFiles()
+        self.__load()

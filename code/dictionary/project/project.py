@@ -1,6 +1,7 @@
 # Author: Mihai Boicu
 import json
 from  dictionary.session import test_session
+from dictionary.section import test_section
 
 class Project:
 
@@ -22,6 +23,9 @@ class Project:
         if (self._type=="test-session"):
             t=test_session.TestSession(self._name,self._path)
             t.execute()
+        elif (self._type=="test-section"):
+            t=test_section.TestSection(self._name,self._path)
+            t.execute()        
         else:
             print("Unknown type of project")
 
