@@ -37,7 +37,7 @@ class ProjectsList:
     def interactive(self):
         print("Repository: "+str(self._REPOSITORY))
         while True:
-            print('\nSelect a test:')
+            print('\nSelect a project:')
             noProjects = 0
             for project in self._PROJECTS_LIST:
                 noProjects += 1

@@ -1,13 +1,13 @@
 # Author: Mihai Boicu
 
-# python main_test.py
+# python main.py
 
 
 from dictionary.projectsList import projects_list
 
 
 def main():
-    list = projects_list.ProjectsList("../test/projects.json")
+    list = projects_list.ProjectsList("../project/projects.json")
     list.interactive()
 
 if __name__ == '__main__':
