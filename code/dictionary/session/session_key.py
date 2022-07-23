@@ -22,22 +22,21 @@ class SessionKey:
     _DEBUG = False
 
     # configuration file to be used to generate the keys
-    _CONFIG_FILE_NAME = "../config/session-config.json"
+    _projectPath = None
 
     # configuration constants
-    _START_YEAR = 0
-    _END_YEAR = 0
-    _START_KEY = 0
-    _MIN_STEP = 0
-    _MAX_STEP = 0
-    _SEMESTERS = []
-    _DICTIONARY_TYPE = None
-    _REGENERATE = None
+    _startYear = 0
+    _endYear = 0
+    _startKey = 0
+    _minStep = 0
+    _maxStep = 0
+    _semesters = []
+    _dictionaryType = None
+    _regenerate = None
 
     # key file with randomly generated keys for sessions
-    _KEY_FILE_NAME_TXT = "../key/sessionKeys.txt"
-    _KEY_FILE_NAME_CSV = "../key/sessionKeys.csv"
-    
+    _txtKeyFilename: None
+    _csvKeyFilename: None    
 
     # a map between a session (i.e. semester) and its anonymized code
     # example (200040, 198) will link Summer semester in 2000 with the code 198
@@ -46,33 +45,34 @@ class SessionKey:
 
     # load the configuration file for the session key
     def __loadConfig(self):
-        configFile = open(self._CONFIG_FILE_NAME, )
+        configFile = open(self._projectPath+"/config/session.json", mode='r')
         configData = json.load(configFile)
+        configFile.close()
 
-        self._DICTIONARY_TYPE = configData['format']
-        self._START_YEAR = configData['start_year']
-        self._END_YEAR = configData['end_year']
-        self._START_KEY = configData['start_key']
-        self._MIN_STEP = configData['min_step']
-        self._MAX_STEP = configData['max_step']
-        self._SEMESTERS = configData['semesters_list']
-        self._REGENERATE = configData['regenerate']
+        self._dictionaryType = configData['format']
+        self._startYear = configData['start_year']
+        self._endYear = configData['end_year']
+        self._startKey = configData['start_key']
+        self._minStep = configData['min_step']
+        self._maxStep = configData['max_step']
+        self._semesters = configData['semesters_list']
+        self._regenerate = configData['regenerate']
 
     def __cleanFiles(self):
-        if self._REGENERATE or self._DICTIONARY_TYPE == "CSV":
-            if os.path.exists(self._KEY_FILE_NAME_TXT):
-                os.remove(self._KEY_FILE_NAME_TXT)
-        if self._REGENERATE or self._DICTIONARY_TYPE == "TXT":
-            if os.path.exists(self._KEY_FILE_NAME_CSV):
-                os.remove(self._KEY_FILE_NAME_CSV) 
+        if self._regenerate or self._dictionaryType == "CSV":
+            if os.path.exists(self._txtKeyFilename):
+                os.remove(self._txtKeyFilename)
+        if self._regenerate or self._dictionaryType == "TXT":
+            if os.path.exists(self._csvKeyFilename):
+                os.remove(self._csvKeyFilename) 
 
     # load the generated key file and initialize the dictionary
     # return true if succeeds, false otherwise
     def __load(self):
-        if self._REGENERATE:
+        if self._regenerate:
             return False
-        if os.path.exists(self._KEY_FILE_NAME_TXT):
-            file = open(self._KEY_FILE_NAME_TXT, mode="r")
+        if os.path.exists(self._txtKeyFilename):
+            file = open(self._txtKeyFilename, mode="r")
             lines = file.readlines()
             for line in lines:
                 parts = line.split(" ")
@@ -80,10 +80,10 @@ class SessionKey:
                 self._dictionaryKey[int(parts[1])] = int(parts[0])
             file.close()
             if self._DEBUG:
-                print("  - text file loaded: "+self._KEY_FILE_NAME_TXT)
+                print("  - text file loaded: "+self._txtKeyFilename)
             return True
-        if os.path.exists(self._KEY_FILE_NAME_CSV):
-            file = open(self._KEY_FILE_NAME_CSV, mode='r')
+        if os.path.exists(self._csvKeyFilename):
+            file = open(self._csvKeyFilename, mode='r')
             csvFile = csv.reader(file)
             lineIndex = 0
             sessionCode = None
@@ -100,7 +100,7 @@ class SessionKey:
                             self._dictionaryKey[sessionKey] = sessionCode
             file.close()
             if self._DEBUG:
-                print("  - csv file loaded: "+self._KEY_FILE_NAME_CSV)
+                print("  - csv file loaded: "+self._csvKeyFilename)
                 print(self._dictionarySession)
                 print(self._dictionaryKey)
             return True
@@ -111,17 +111,17 @@ class SessionKey:
     # save the key file based on the current dictionary
     # return true if succeeds, false otherwise
     def __save(self):      
-        if self._DICTIONARY_TYPE=="TXT":
-            file = open(self._KEY_FILE_NAME_TXT, "w")
+        if self._dictionaryType=="TXT":
+            file = open(self._txtKeyFilename, "w")
             for sessionCode in sorted(self._dictionarySession.keys()):
                 file.write(str(sessionCode) + " " + str(self._dictionarySession[sessionCode]) + "\n")
             file.close()
             if self._DEBUG:
-                print("  - text file saved: "+self._KEY_FILE_NAME_TXT)
+                print("  - text file saved: "+self._txtKeyFilename)
             return True
-        if self._DICTIONARY_TYPE=="CSV":
+        if self._dictionaryType=="CSV":
             # writing to the csv file 
-            csvfile = open(self._KEY_FILE_NAME_CSV, "w") 
+            csvfile = open(self._csvKeyFilename, "w") 
             # creating a csv writer object 
             csvwriter = csv.writer(csvfile) 
             header = [ "session", "key"]
@@ -132,21 +132,21 @@ class SessionKey:
                 csvwriter.writerow(entry) 
             csvfile.close()
             if self._DEBUG:
-                print("  - csv file saved: "+self._KEY_FILE_NAME_CSV)
+                print("  - csv file saved: "+self._csvKeyFilename)
             return True
         print("  - error saving dictionary")
         return False
 
     # generate a new dictionary (assumed empty)
     def __generate(self):
-        lastKey =  self._START_KEY
+        lastKey =  self._startKey
         # for all years in the configuration range
-        for i in range(self._START_YEAR, self._END_YEAR + 1):
+        for i in range(self._startYear, self._endYear + 1):
             # for all the semesters
-            for sem in self._SEMESTERS:
+            for sem in self._semesters:
                 # update the last key to a new valid key
                 sessionCode = i * 100 + sem
-                lastKey += random.randint(self._MIN_STEP, self._MAX_STEP)
+                lastKey += random.randint(self._minStep, self._maxStep)
                 # save the semester and key in dictionary
                 self._dictionarySession[sessionCode] = lastKey
                 self._dictionaryKey[lastKey] = sessionCode
@@ -156,21 +156,23 @@ class SessionKey:
         # print("lastKey: ",lastKey)
         # print("sessionDict: ", sessionDict)
 
-    # initialize the class
-    # load the keys in dictionary if key file exist
-    # or generate and save the key file otherwise
-    def __init__(self):
-        if self._DEBUG:
-            print("Session dictionary initialization: ")
-        self.__loadConfig()
-        self.__cleanFiles()
-        if not self.__load():
-            self.__generate()
-            self.__save()
-
-
     def getSessionKey(self,sessionCode):
         return self._dictionarySession.get(sessionCode)
 
     def getSessionCode(self,sessionKey):
         return self._dictionaryKey.get(sessionKey)
+
+    # initialize the class
+    # load the keys in dictionary if key file exist
+    # or generate and save the key file otherwise
+    def __init__(self, projectPath):
+        if self._DEBUG:
+            print("Session dictionary initialization: ")
+        self._projectPath=projectPath
+        self._txtKeyFilename = projectPath + "/key/sessionKeys.txt"
+        self._csvKeyFilename = projectPath + "/key/sessionKeys.csv"
+        self.__loadConfig()
+        self.__cleanFiles()
+        if not self.__load():
+            self.__generate()
+            self.__save()

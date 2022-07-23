@@ -3,14 +3,14 @@
     "projects": [
         {
             "name": "session test 1",
-            "path": "test/ta001"
+            "path": "../test/ta001"
         },
         {
             "name": "section test 1",
-            "path": "test/tb001"
+            "path": "../test/tb001"
         },
         {
             "name": "user test 1",
-            "path": "test/tc001"
+            "path": "../test/tc001"
         }]
 }

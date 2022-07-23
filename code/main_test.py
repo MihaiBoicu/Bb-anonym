@@ -3,7 +3,7 @@
 # python main_test.py
 
 
-from dictionary.projectsList import projects_list
+from dictionary.project import projects_list
 
 
 def main():
