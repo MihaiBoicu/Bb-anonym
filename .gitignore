@@ -1,12 +1,5 @@
-all_download/*.*
-archive/*.*
-config/*.*
-download/*.*
-inbox/*.*
-key/*.*
-outbox/*.*
-predefined-key/*.*
-project/*.*
+archive/**
+project/**
 
 
 

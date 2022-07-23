@@ -1,6 +1,0 @@
-{
-    "format": "CSV",
-    "regenerate": true,    
-    "min_key": 10000,
-    "max_key": 99999
-}
