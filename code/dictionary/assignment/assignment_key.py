@@ -67,6 +67,27 @@ class AssignmentKey:
             indexList.append(index)
         return indexList
 
+    def isAnonymizedAssignment(self, assignmentName): 
+        for i in range(0,len(self._assignmentsList)):
+            a:Assignment=self._assignmentsList[i]
+            if a.name==assignmentName:
+                return True
+        return False
+
+    def __getAssignment(self, assignmentName):
+        for i in range(0,len(self._assignmentsList)):
+            a:Assignment=self._assignmentsList[i]
+            if a.name==assignmentName:
+                return a
+        return None          
+
+    def getAnonymizedName(self, assignmentName):
+        for i in range(0,len(self._assignmentsList)):
+            a:Assignment=self._assignmentsList[i]
+            if a.name==assignmentName:
+                return a.outputName
+        return None            
+
     def getAnonymizedValues(self, data):
         result = []
         for i in range(0,len(self._assignmentsList)):
@@ -80,6 +101,15 @@ class AssignmentKey:
             if v!=None:
                 v=a.getOutputValue(v)
             result.append(v)
+        return result
+
+
+
+    def getMultipleValues(self, name, value, multiplier):
+        a = self.__getAssignment(name)
+        result = []
+        for i in range (0,multiplier):
+            result.append(a.getOutputValue(value))
         return result
 
     def getHeader(self):
