@@ -28,7 +28,7 @@ class UserKey:
     _dictionaryKey = {}
 
     _isModified = False
-    _multiplication = 1
+    _multiplier = 1
 
     # load the configuration file for the user key
     def __loadConfig(self):
@@ -38,6 +38,7 @@ class UserKey:
 
         self._dictionaryType = configData['format']
         self._regenerate = configData['regenerate']
+        self._multiplier = configData['multiplier'] 
         self._minKey = configData['min-key']    
         self._maxKey = configData['max-key'] 
         self._spaceReplacement = configData['space-replacement']   
@@ -76,7 +77,7 @@ class UserKey:
             lastName = None
             firstName = None
             emailId = None
-            linelen = 3 + self._multiplication
+            linelen = 3 + self._multiplier
             keys = []       
             for lines in csvFile:
                 for line in lines:
@@ -129,7 +130,7 @@ class UserKey:
             # creating a csv writer object 
             csvwriter = csv.writer(csvfile) 
             header = [ "last name", "first name", "email id"]
-            for i in range(1,self._multiplication+1):
+            for i in range(1,self._multiplier+1):
                 header.append("user key "+str(i))
             csvwriter.writerow(header)  
             # writing the fields 
@@ -146,11 +147,14 @@ class UserKey:
         print("  - error saving dictionary")
         return False
 
+    def getMultiplication(self):
+        return self._multiplier
+
     def getUserKeys(self, emailId):
-        return self.getUserKeyFull(None, None, emailId)
+        return self.getUserKeysFull(None, None, emailId)
 
     # return the existing key for the given user, if any 
-    # or create and return a new key
+    # or create and return a snew key
     def getUserKeysFull(self, lastName, firstName, emailId):
         # return current key if section already defined in dictionary
         record = self._dictionaryUser.get(emailId)
@@ -169,7 +173,7 @@ class UserKey:
         # define new code
         
         userKeys=[]
-        for i in range(1,self._multiplication+1):
+        for i in range(1,self._multiplier+1):
             # randomly generate a new (not used) anonymized value for the user key between  min and max 
             userKey = -1
             trial = 0
@@ -196,10 +200,9 @@ class UserKey:
 
 
     # Initialize the section key based on the saved key file, if any
-    def __init__(self, projectPath, multiplication):
+    def __init__(self, projectPath):
         if self._DEBUG:
             print("User dictionary initialization: ")
-        self._multiplication = multiplication
         self._projectPath=projectPath
         self._txtKeyFilename = projectPath + "/key/userKeys.txt"
         self._csvKeyFilename = projectPath + "/key/userKeys.csv"        

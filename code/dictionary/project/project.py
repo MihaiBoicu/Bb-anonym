@@ -5,58 +5,70 @@ from dictionary.gradecenter import gc_extract
 from dictionary.attempt import attempt_extract
 from dictionary.session import test_session
 from dictionary.section import test_section
+from dictionary.key import all_keys
 
 class Project:
 
-    _DEBUG = False
+    _DEBUG : bool = False
 
-    _name = None
-    _directoryName = None
-    _path = None
-    _type = None
+    _type : str = None
+    _types = []
 
-    def _load(self):
-        configFile = open(self._path+"/config/project.json", mode='r')
+    _allKeys : all_keys.AllKeys = None
+
+    def __printConfig(self, configData):
+        print("Project: Config information")
+        print("  - config data: "+str(configData))
+        print("  - type: "+str(self._type))
+        print("  - types: "+str(self._types))
+
+    def __load(self):
+        configFile = open(self._allKeys.configPath+"/project.json", mode='r')
         configData = json.load(configFile)
         configFile.close()
-        self._name = configData['name']
+        name = configData['name']
         self._type = configData['type']
+        if self._type=='combined':
+            self._types = configData['types']
+        self._allKeys.setName(name)
+        if self._DEBUG:
+            self.__printConfig(configData)
 
-    def _initFolder(self,folderName):
-        folderPath = self._path+"/"+folderName
-        if not os.path.exists(folderPath):
-            os.mkdir(folderPath)
-
-    def _initFolders(self):
-        self._initFolder("inbox")
-        self._initFolder("key")
-        self._initFolder("outbox")
-
-    def execute(self):
-        if self._type=="gc-extract":
-            t=gc_extract.GradeCenterExtract(self._name,self._path)
+    def __executeType(self, type):
+        if type=="gc-extract":
+            t=gc_extract.GradeCenterExtract(self._allKeys)
             t.execute()
-        elif self._type=="attempts-extract":
-            t= attempt_extract.AllAttemptsExtract(self._name,self._path)
+        elif type=="attempts-extract":
+            t= attempt_extract.AllAttemptsExtract(self._allKeys)
             t.execute()
-
-        elif self._type=="test-session":
-            t=test_session.TestSession(self._name,self._path)
+        elif type=="test-session":
+            t=test_session.TestSession(self._allKeys)
             t.execute()
-        elif self._type=="test-section":
-            t=test_section.TestSection(self._name,self._path)
-            t.execute()        
+        elif type=="test-section":
+            t=test_section.TestSection(self._allKeys)
+            t.execute()                 
         else:
             print("Unknown type of project")
 
+    def execute(self):
+        if self._type=="combined":
+            for type in self._types:
+                self.__executeType(type)
+        else: 
+            self.__executeType(self._type)
+        self._allKeys.save()
+
     def getName(self):
-        return self._name
+        return self._allKeys.projectName
 
     def getPath(self):
-        return self._path  
+        return self._allKeys.projectPath  
 
     def __init__(self, dirName, path):
-        self._directoryName = dirName
-        self._path = path
-        self._load()
-        self._initFolders()
+        if self._DEBUG:
+            print("Debug project.py")
+            print("  - dirName="+dirName)
+            print("  - path="+path)
+        self._allKeys = all_keys.AllKeys(dirName, path)
+        self.__load()
+        

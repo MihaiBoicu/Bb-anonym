@@ -5,16 +5,13 @@ import os
 import random
 from dictionary.user import user_key
 from dictionary.assignment import assignment_key
+from dictionary.key import all_keys
 
 class AllAttemptsExtract:
 
     _DEBUG : bool = False
 
-    _projectName : str = None
-    _projectPath : str = None
-
-    _userKey : user_key.UserKey = None
-    _assignmentKey : assignment_key.AssignmentKey = None
+    _allKeys : all_keys.AllKeys = None
 
     _format = None
     _regenerate = None
@@ -22,12 +19,10 @@ class AllAttemptsExtract:
     _outputMultiplier : int
     _studentKeyMultiplier: int
 
-    _inboxFolder = None
-
     _result = []
 
     def __load(self):
-        configFile = open(self._projectPath+"/config/attempt-extract.json", mode='r')
+        configFile = open(self._allKeys.configPath+"/attempt-extract.json", mode='r')
         configData = json.load(configFile)
         configFile.close()
         self._format = configData['format']
@@ -39,7 +34,7 @@ class AllAttemptsExtract:
 
     def __processAttemptsfile(self,filename):
         anonymData = []
-        with open(self._inboxFolder+"/"+filename, newline='') as csvfile:
+        with open(self._allKeys.inboxPath+"/"+filename, newline='') as csvfile:
             reader = csv.reader(csvfile)
             rowNumber = 0
             for row in reader:
@@ -50,15 +45,15 @@ class AllAttemptsExtract:
                 else:
                     #process data
                     assignmentName = row[8]
-                    if self._assignmentKey.isAnonymizedAssignment(assignmentName):
+                    if self._allKeys.assignmentKey.isAnonymizedAssignment(assignmentName):
                         assignmentValue = float(row[3])
-                        assignmentValues = self._assignmentKey.getMultipleValues(assignmentName, assignmentValue, self._outputMultiplier)
+                        assignmentValues = self._allKeys.assignmentKey.getMultipleValues(assignmentName, assignmentValue, self._outputMultiplier)
                         lastName = row[0]
                         firstName = row[1]
                         userId = row[2]
-                        userKeys = self._userKey.getUserKeysFull(lastName,firstName, userId)
+                        userKeys = self._allKeys.userKey.getUserKeysFull(lastName,firstName, userId)
                         attempt = row[4]
-                        assignmentOutputName = self._assignmentKey.getAnonymizedName(assignmentName)
+                        assignmentOutputName = self._allKeys.assignmentKey.getAnonymizedName(assignmentName)
                         for i in range(0,self._outputMultiplier):
                             outRow = [userKeys[i], assignmentOutputName, attempt, assignmentValues[i]]
                             anonymData.append(outRow)
@@ -76,7 +71,7 @@ class AllAttemptsExtract:
     def __saveOutput(self):
         if self._format=="CSV":
             # writing to the csv file 
-            filename = self._projectPath+"/outbox/"+self._outputFilename
+            filename = self._allKeys.outboxPath+"/"+self._outputFilename
             csvfile = open(filename, "w") 
             # creating a csv writer object 
             csvwriter = csv.writer(csvfile) 
@@ -90,20 +85,17 @@ class AllAttemptsExtract:
         return False      
 
     def execute(self):
-        print("Attempts Extract Project: "+self._projectName)
+        print("Attempts Extract Project: "+self._allKeys.projectName)
         self._result = []
-        for filename in os.listdir(self._inboxFolder):
+        for filename in os.listdir(self._allKeys.inboxPath):
             if filename.startswith("attempts_"):
                 fileResult = self.__processAttemptsfile(filename)
                 self._result.extend(fileResult)
         self.__shuffle()
         self.__saveOutput()
 
-    def __init__(self, projectName, projectPath):
-        self._projectName = projectName
-        self._projectPath = projectPath
+    def __init__(self, allKeys:all_keys.AllKeys):
+        self._allKeys = allKeys
         self.__load()   
-        self._inboxFolder = projectPath + "/inbox"
-        self._userKey = user_key.UserKey(projectPath,  self._outputMultiplier)
-        self._assignmentKey = assignment_key.AssignmentKey(projectPath)
-
+        self._allKeys.initUserKey(self._outputMultiplier)
+        self._allKeys.initAssignmentKey()

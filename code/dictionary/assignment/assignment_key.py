@@ -103,7 +103,10 @@ class AssignmentKey:
             result.append(v)
         return result
 
-
+    def getAnonymizedValue(self, assignmentName, valueStr):
+        a = self.__getAssignment(assignmentName)
+        val = float(valueStr)
+        return a.getOutputValue(val)
 
     def getMultipleValues(self, name, value, multiplier):
         a = self.__getAssignment(name)
@@ -117,6 +120,12 @@ class AssignmentKey:
         for i in range(0,len(self._assignmentsList)):
             a:Assignment=self._assignmentsList[i]
             header.append(a.outputName)
+        return header
+
+    def getHeaderList(self, assignmentNames):
+        header = []
+        for an in assignmentNames:
+            header.append(self.getAnonymizedName(an))
         return header
 
     def __init__(self, projectPath):
