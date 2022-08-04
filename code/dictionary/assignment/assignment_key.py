@@ -4,20 +4,20 @@ import csv
 import json
 import os
 import random
+import datetime
 
 class Assignment:
     name: str
     grade: int
+    durationSec: int
     outputName: str
     outputValue: str
     outputType: str
     outputRandom: float
     outputPrecision: float
 
-    def getOutputValue(self,value):
-        ov=value
-        if (self.outputValue=="percent100"):
-            ov = 100*ov/self.grade
+    def anonimyzePercent(self, val):
+        ov=val
         if self.outputRandom!=0:
             if ov>15:
                 ov = ov - self.outputRandom + 2 * self.outputRandom * random.random()
@@ -29,14 +29,38 @@ class Assignment:
             return int(round(ov,0))
         return ov
 
+    def getOutputDuration(self, duration):
+        ov=self.computeSeconds(duration)
+        if (self.outputValue=="percent100"):
+            ov = 100*ov/self.durationSec
+        return self.anonimyzePercent(ov)
+
+    def getOutputValue(self,value):
+        ov=value
+        if (self.outputValue=="percent100"):
+            ov = 100*ov/self.grade
+        return self.anonimyzePercent(ov)
+
+    def computeSeconds(self, duration:str):
+        if duration=="open":
+            return -1
+        index1=duration.find(":")
+        index2=duration.find(":",index1+1)
+        hours = int(duration[0:index1])
+        minutes = int(duration[index1+1:index2])
+        seconds = int(duration[index2+1:])
+        return hours*3600+60*minutes+seconds
+
     def __init__(self, assignmentJson):
         self.name = assignmentJson["name"]
         self.grade = assignmentJson["grade"]
+        duration = assignmentJson["duration"]
         self.outputName = assignmentJson["output-name"]
         self.outputValue = assignmentJson["output-value"]
         self.outputType = assignmentJson["output-type"]
         self.outputRandom = float(assignmentJson["output-random"])
         self.outputPrecision = float(assignmentJson["output-precision"])
+        self.durationSec = self.computeSeconds(duration)
 
 class AssignmentKey:
 
@@ -103,6 +127,10 @@ class AssignmentKey:
             result.append(v)
         return result
 
+    def getAnonymizedDuration(self, assignmentName, durationStr):
+        a = self.__getAssignment(assignmentName)
+        return a.getOutputDuration(durationStr)
+
     def getAnonymizedValue(self, assignmentName, valueStr):
         a = self.__getAssignment(assignmentName)
         val = float(valueStr)
@@ -114,6 +142,23 @@ class AssignmentKey:
         for i in range (0,multiplier):
             result.append(a.getOutputValue(value))
         return result
+
+    def getAnonymizedSubmissionTime(self, assignName, subDateStr, dueDateStr):
+        a=self.__getAssignment(assignName)
+        subDate = None
+        if subDateStr.endswith("LATE"):
+            subDateStr = subDateStr[:-4]
+            # February 9, 2022 4:39:30 PM
+            subDate=datetime.datetime.strptime(subDateStr,'%B %d, %Y %I:%M:%S %p')
+        else:
+            # 2/6/22 23:59
+            subDate=datetime.datetime.strptime(subDateStr,'%m/%d/%y %H:%M')
+        dueDate = datetime.datetime.strptime(dueDateStr,'%m/%d/%y %H:%M')
+        diff=dueDate-subDate
+        diff=100.0*diff.total_seconds()/(7*24*60*60)
+        if diff<-100:
+            diff=-100
+        return a.anonimyzePercent(diff)
 
     def getHeader(self):
         header = []

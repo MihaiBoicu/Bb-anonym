@@ -2,7 +2,7 @@
 import json
 import os.path
 from dictionary.gradecenter import gc_extract
-from dictionary.attempt import attempt_extract
+from dictionary.attempt import attempts_extract
 from dictionary.session import test_session
 from dictionary.section import test_section
 from dictionary.key import all_keys
@@ -39,7 +39,7 @@ class Project:
             t=gc_extract.GradeCenterExtract(self._allKeys)
             t.execute()
         elif type=="attempts-extract":
-            t= attempt_extract.AllAttemptsExtract(self._allKeys)
+            t= attempts_extract.AllAttemptsExtract(self._allKeys)
             t.execute()
         elif type=="test-session":
             t=test_session.TestSession(self._allKeys)
